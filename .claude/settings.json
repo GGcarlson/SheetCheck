@@ -1,0 +1,14 @@
+{
+  "allowedTools": [
+    "bash",
+    "read",
+    "write",
+    "edit",
+    "multiedit",
+    "glob",
+    "grep",
+    "ls"
+  ],
+  "projectName": "SheetCheck",
+  "description": "Excel validation tool with structural, data, and visual testing capabilities"
+}
