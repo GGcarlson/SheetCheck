@@ -1,1 +1,5 @@
 # Default validation rules for SheetCheck
+
+sheets:
+  Summary:
+    must_exist: true

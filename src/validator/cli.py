@@ -2,6 +2,7 @@ import click
 from pathlib import Path
 
 from . import __version__
+from .config import load_rules, RuleConfigError
 
 
 @click.command()
@@ -30,6 +31,17 @@ def main(workbook: Path, rules: Path, renderer: str, report: str) -> None:
     click.echo(f"Using rules: {rules}")
     click.echo(f"Renderer: {renderer}")
     click.echo(f"Reports: {report}")
+
+    # Load and validate rule configuration
+    try:
+        config = load_rules(rules)
+        click.echo(f"Loaded {len(config.sheets)} sheet rule(s)")
+        for sheet_name, sheet_cfg in config.sheets.items():
+            if sheet_cfg.must_exist:
+                click.echo(f"  - {sheet_name}: must exist")
+    except RuleConfigError as e:
+        click.echo(f"Error loading rules: {e}", err=True)
+        raise click.Abort()
 
     # TODO: Implement actual validation logic
     click.echo("Validation complete (placeholder implementation)")
