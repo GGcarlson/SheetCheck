@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "sheetcheck"
 version = "0.1.0"
 description = "Excel/spreadsheet validation tool with structural, data, and visual testing"
-authors = [{name = "GGcarlson", email = ""}]
+authors = [{name = "GGcarlson", email = "38612398+GGcarlson@users.noreply.github.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"

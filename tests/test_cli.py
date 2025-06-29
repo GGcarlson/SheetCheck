@@ -1,20 +1,20 @@
 import subprocess
 import sys
-from pathlib import Path
 
 
 def _run(*args):
     """Run the validator CLI with given arguments."""
     return subprocess.run(
-        [sys.executable, "-m", "validator", *args],
-        capture_output=True, text=True
+        [sys.executable, "-m", "src.validator.cli", *args],
+        capture_output=True,
+        text=True,
     )
 
 
 def test_help():
     """Test that --help shows usage information."""
     result = _run("--help")
-    assert "Usage: validator" in result.stdout
+    assert "Usage: python -m src.validator.cli" in result.stdout
     assert result.returncode == 0
 
 
@@ -36,4 +36,7 @@ def test_nonexistent_workbook():
     """Test that nonexistent workbook file shows error."""
     result = _run("nonexistent.xlsx")
     assert result.returncode != 0
-    assert "does not exist" in result.stderr.lower() or "no such file" in result.stderr.lower()
+    assert (
+        "does not exist" in result.stderr.lower()
+        or "no such file" in result.stderr.lower()
+    )
