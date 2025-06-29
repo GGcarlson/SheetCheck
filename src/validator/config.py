@@ -27,10 +27,60 @@ class RuleConfig:
     """Complete rule configuration for workbook validation."""
 
     sheets: Dict[str, SheetCfg] = field(default_factory=dict)
+    # Data validation rules (Great Expectations)
+    data_validation_rules: List[str] = field(default_factory=list)
+
+
+def detect_rule_type(path: Union[str, Path]) -> str:
+    """Detect the type of rule from a YAML file.
+
+    Args:
+        path: Path to YAML rule file
+
+    Returns:
+        Rule type: "data_validation" or "structural"
+
+    Raises:
+        RuleConfigError: If file cannot be read or parsed
+    """
+    path = Path(path)
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except FileNotFoundError:
+        raise RuleConfigError(f"Rules file not found: {path}")
+    except yaml.YAMLError as e:
+        raise RuleConfigError(f"Invalid YAML in {path}: {e}")
+    except Exception as e:
+        raise RuleConfigError(f"Error reading {path}: {e}")
+
+    if data is None:
+        return "structural"  # Default to structural for empty files
+
+    # Check for explicit rule_type
+    rule_type = data.get("rule_type")
+    if rule_type == "data_validation":
+        return "data_validation"
+    elif rule_type == "structural":
+        return "structural"
+
+    # Auto-detect based on content
+    if "expectations" in data:
+        return "data_validation"
+    elif "sheets" in data:
+        return "structural"
+
+    # Default to structural for unknown format
+    return "structural"
 
 
 def load_rules(path: Union[str, Path]) -> RuleConfig:
     """Load and parse rule configuration from YAML file.
+
+    Handles both structural validation rules and data validation rules.
+    Data validation rules are identified by rule_type: "data_validation"
+    or presence of "expectations" field.
 
     Args:
         path: Path to YAML rule file
@@ -43,6 +93,14 @@ def load_rules(path: Union[str, Path]) -> RuleConfig:
     """
     path = Path(path)
 
+    # Detect rule type
+    rule_type = detect_rule_type(path)
+
+    if rule_type == "data_validation":
+        # For data validation rules, just store the file path
+        return RuleConfig(sheets={}, data_validation_rules=[str(path)])
+
+    # Handle structural rules (original logic)
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -73,7 +131,7 @@ def load_rules(path: Union[str, Path]) -> RuleConfig:
                     expect_cf_rules=sheet_config.get("expect_cf_rules", []),
                 )
 
-        return RuleConfig(sheets=sheets)
+        return RuleConfig(sheets=sheets, data_validation_rules=[])
 
     except Exception as e:
         raise RuleConfigError(f"Error parsing configuration from {path}: {e}")

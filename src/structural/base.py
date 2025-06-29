@@ -53,6 +53,13 @@ class ValidationFailure:
         if self.tolerance is not None:
             result["tolerance"] = self.tolerance
 
+        # Include any additional custom attributes for data validation
+        for attr_name in ["expectation", "column", "unexpected_count", "observed_value"]:
+            if hasattr(self, attr_name):
+                attr_value = getattr(self, attr_name)
+                if attr_value is not None:
+                    result[attr_name] = attr_value
+
         return result
 
 

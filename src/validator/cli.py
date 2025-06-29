@@ -11,6 +11,7 @@ from . import __version__
 from .config import load_rules, RuleConfigError, RuleConfig
 from ..structural import get_structural_rules
 from ..structural.base import ValidationFailure
+from ..data import DataValidationRule
 
 
 @click.command()
@@ -43,10 +44,22 @@ def main(workbook: Path, rules: Path, renderer: str, report: str) -> None:
     # Load and validate rule configuration
     try:
         config = load_rules(rules)
-        click.echo(f"Loaded {len(config.sheets)} sheet rule(s)")
-        for sheet_name, sheet_cfg in config.sheets.items():
-            if sheet_cfg.must_exist:
-                click.echo(f"  - {sheet_name}: must exist")
+        total_rules = len(config.sheets) + len(config.data_validation_rules)
+        click.echo(f"Loaded {total_rules} rule(s)")
+
+        if config.sheets:
+            click.echo(f"  - {len(config.sheets)} structural rule(s)")
+            for sheet_name, sheet_cfg in config.sheets.items():
+                if sheet_cfg.must_exist:
+                    click.echo(f"    - {sheet_name}: must exist")
+
+        if config.data_validation_rules:
+            click.echo(
+                f"  - {len(config.data_validation_rules)} data validation rule(s)"
+            )
+            for rule_path in config.data_validation_rules:
+                click.echo(f"    - {Path(rule_path).name}")
+
     except RuleConfigError as e:
         click.echo(f"Error loading rules: {e}", err=True)
         raise click.Abort()
@@ -60,18 +73,25 @@ def main(workbook: Path, rules: Path, renderer: str, report: str) -> None:
         click.echo(f"Error loading workbook: {e}", err=True)
         raise click.Abort()
 
-    # Run structural validation
+    # Run validation
     structural_failures = run_structural_validation(wb, config)
+    data_failures = run_data_validation(wb, config)
+
+    all_failures = structural_failures + data_failures
 
     # Generate reports
     reports = report.split(",")
     if "json" in reports:
-        output_json_report(structural_failures)
+        output_json_report(structural_failures, data_failures)
 
     # Set exit code based on validation results
-    if structural_failures:
-        error_count = len(structural_failures)
+    if all_failures:
+        error_count = len(all_failures)
         click.echo(f"Validation failed with {error_count} error(s)")
+        if structural_failures:
+            click.echo(f"  - {len(structural_failures)} structural failure(s)")
+        if data_failures:
+            click.echo(f"  - {len(data_failures)} data validation failure(s)")
         sys.exit(1)
     else:
         click.echo("Validation passed")
@@ -129,14 +149,58 @@ def run_structural_validation(
     return failures
 
 
-def output_json_report(structural_failures: List[ValidationFailure]) -> None:
+def run_data_validation(
+    workbook: Workbook, config: RuleConfig
+) -> List[ValidationFailure]:
+    """Run all data validation rules using Great Expectations.
+
+    Args:
+        workbook: The loaded Excel workbook
+        config: The rule configuration
+
+    Returns:
+        List of validation failures from data validation
+    """
+    failures = []
+
+    for rule_path in config.data_validation_rules:
+        try:
+            # Create data validation rule and run it
+            data_rule = DataValidationRule(rule_path, None)
+            rule_failures = data_rule.run(workbook)
+            failures.extend(rule_failures)
+
+            click.echo(f"Data validation completed for {Path(rule_path).name}")
+            if rule_failures:
+                click.echo(f"  - Found {len(rule_failures)} failure(s)")
+            else:
+                click.echo("  - Passed")
+
+        except Exception as e:
+            click.echo(f"Error running data validation for {rule_path}: {e}", err=True)
+            failures.append(
+                ValidationFailure(
+                    type="data_validation_error",
+                    message=f"Failed to run data validation: {e}",
+                    fix_hint=f"Check rule file: {rule_path}",
+                )
+            )
+
+    return failures
+
+
+def output_json_report(
+    structural_failures: List[ValidationFailure], data_failures: List[ValidationFailure]
+) -> None:
     """Output validation results in JSON format.
 
     Args:
         structural_failures: List of structural validation failures
+        data_failures: List of data validation failures
     """
     result = {
-        "structuralFailures": [failure.to_dict() for failure in structural_failures]
+        "structuralFailures": [failure.to_dict() for failure in structural_failures],
+        "dataFailures": [failure.to_dict() for failure in data_failures],
     }
 
     json_output = json.dumps(result, indent=2)
