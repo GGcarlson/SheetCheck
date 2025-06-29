@@ -1,0 +1,6 @@
+sheets:
+  Dashboard:
+    expect_cf_rules:
+      - range: "C2:C50"
+        type: "colorScale"
+        colors: ["#63BE7B", "#FFEB84", "#F8696B"]

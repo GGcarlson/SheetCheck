@@ -1,0 +1,8 @@
+sheets:
+  Dashboard:
+    objects:
+      - name: "RefreshButton"
+        expect_position:
+          top: 20
+          left: 450
+          tolerance: 5   # ± pixels

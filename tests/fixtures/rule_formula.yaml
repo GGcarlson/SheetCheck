@@ -1,0 +1,5 @@
+sheets:
+  Summary:
+    cells:
+      B2:
+        formula: "=SUM(Data!B2:B10)"
