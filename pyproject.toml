@@ -36,7 +36,7 @@ dev = [
 ]
 
 [project.scripts]
-sheetcheck = "src.cli:main"
+validator = "src.validator.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
