@@ -58,3 +58,29 @@ sheetcheck validate file.xlsx --rules rules/default.yaml
 - CLI built with Click framework, entry point defined in pyproject.toml
 - Future integration: pandas + Great Expectations for data validation
 - Screenshot providers: COM (Windows) with HTML+Puppeteer fallback
+
+## Issue Management Protocol
+
+**IMPORTANT**: When completing GitHub issues, ALWAYS add a comprehensive verification comment to document the implementation:
+
+### Required Issue Comment Structure:
+1. **Working Examples** - Show actual CLI output and Python API usage exactly as specified
+2. **Test Results** - Include pytest output showing all tests passing
+3. **Code Quality** - Confirm black/flake8/mypy all pass
+4. **Definition of Done** - Check off all requirements from the issue with ✅
+5. **Files Changed** - List all files created/modified
+
+### Example Comment Template:
+```
+## ✅ Issue #X Complete - [Feature Name] Implementation
+
+[Working Examples with actual output]
+[Test Results with pytest output]  
+[Code Quality verification]
+[Definition of Done checklist]
+[Files created/modified list]
+
+Ready for next issues! 🚀
+```
+
+This ensures every issue has complete documentation for future review and verification.
