@@ -1,0 +1,53 @@
+# Great Expectations data validation rule
+# Tests that critical data columns are not null/empty
+
+rule_type: "data_validation"
+description: "Validate that critical columns contain non-null values"
+
+# Target sheet and data range
+target:
+  sheet: "Data"
+  # Optional: specify range, if not provided will use all data
+  # range: "A1:C100"
+
+# Great Expectations suite configuration
+expectations:
+  - expectation_type: "expect_column_values_to_not_be_null"
+    kwargs:
+      column: "id"
+    meta:
+      notes: "ID column must not contain null values"
+      
+  - expectation_type: "expect_column_values_to_not_be_null"
+    kwargs:
+      column: "date"
+    meta:
+      notes: "Date column must not contain null values"
+      
+  - expectation_type: "expect_column_values_to_not_be_null" 
+    kwargs:
+      column: "amount"
+    meta:
+      notes: "Amount column must not contain null values"
+
+  - expectation_type: "expect_column_values_to_be_of_type"
+    kwargs:
+      column: "id"
+      type_: "int"
+    meta:
+      notes: "ID should be integer type"
+
+  - expectation_type: "expect_column_values_to_be_between"
+    kwargs:
+      column: "amount"
+      min_value: 0
+      max_value: 10000
+    meta:
+      notes: "Amount should be reasonable range 0-10000"
+
+# Optional: Validation thresholds  
+validation:
+  # Minimum percentage of rows that must pass for rule to succeed
+  success_threshold: 0.95  # 95% of rows must pass
+  # Whether to stop on first failure or collect all failures
+  catch_exceptions: true
