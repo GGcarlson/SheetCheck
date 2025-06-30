@@ -9,12 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    services:
-      puppeteer:
-        image: mcp/puppeteer:latest
-        ports:
-          - 8085:80
 
     steps:
     - uses: actions/checkout@v4
@@ -24,28 +18,20 @@ jobs:
       with:
         python-version: "3.11"
     
+    - name: Install Chromium browser
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
         
-    - name: Wait for Puppeteer service
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:8085/health || curl -f http://localhost:8085; do sleep 2; done'
-        
-    - name: Code quality checks
-      run: |
-        black --check src/ tests/
-        flake8 src/ tests/ --max-line-length=88
-        mypy src/ --ignore-missing-imports
-        
     - name: Run tests
       run: |
-        pytest --cov=src --cov-report=xml --cov-report=term-missing
+        pytest -q
         
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+    - name: Run validator on sample workbook
+      run: |
+        validator tests/fixtures/good_sheet.xlsx

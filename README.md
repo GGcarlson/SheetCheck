@@ -1,5 +1,7 @@
 # SheetCheck - Excel Validation Tool
 
+![CI](https://github.com/GGcarlson/SheetCheck/workflows/CI/badge.svg)
+
 SheetCheck is a comprehensive Excel/spreadsheet validation tool that provides structural, data, and visual testing capabilities for auditing Excel workbooks.
 
 ## Quick Start
