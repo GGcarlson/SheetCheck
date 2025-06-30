@@ -49,6 +49,12 @@ sheetcheck validate file.xlsx --rules rules/default.yaml
 - Pixel-diff visual validation with configurable thresholds
 - Multiple output formats: JSON, JUnit XML, Markdown reports
 
+## MCP
+
+* Puppeteer MCP server runs at http://localhost:8085
+* Tools: puppeteer_navigate, puppeteer_screenshot, puppeteer_click…
+* ALWAYS allow: mcp__puppeteer__*
+
 ## Development Notes
 
 - Python 3.8+ required, supports through 3.11
@@ -56,8 +62,8 @@ sheetcheck validate file.xlsx --rules rules/default.yaml
 - Code style: Black formatting with 88-character line length
 - Type hints required (mypy strict mode enabled)
 - CLI built with Click framework, entry point defined in pyproject.toml
-- Future integration: pandas + Great Expectations for data validation
-- Screenshot providers: COM (Windows) with HTML+Puppeteer fallback
+- Great Expectations integration: pandas + GE for data validation
+- Screenshot providers: COM (Windows) with HTML+Puppeteer fallback via MCP
 
 ## Issue Management Protocol
 
