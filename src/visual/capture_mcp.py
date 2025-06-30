@@ -259,15 +259,16 @@ def get_renderer_info() -> Dict[str, Any]:
         "preferred_renderer": "mcp" if MCP_AVAILABLE else "none",
     }
 
-    # Check for COM availability on Windows
+    # Check for COM availability on Windows  
     if platform.system() == "Windows":
         try:
             from . import capture_com
 
             info["com_available"] = capture_com.is_capture_supported()
-            if info["com_available"]:
-                info["preferred_renderer"] = "com"
+            # MCP module prefers MCP even when COM is available
         except ImportError:
             info["com_available"] = False
+    else:
+        info["com_available"] = False
 
     return info

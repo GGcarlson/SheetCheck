@@ -67,7 +67,7 @@ class XMLReporter(BaseReporter):
         failure_dict = failure.to_dict()
         
         for key, value in failure_dict.items():
-            if value is not None and value != "":
+            if value != "":  # Allow None values but skip empty strings
                 elem = ET.SubElement(failure_elem, key)
                 if isinstance(value, dict):
                     # Handle nested dictionaries by converting to string

@@ -63,8 +63,8 @@ def test_cli_reports_invalid_format():
         "--report", "invalid"
     )
     
-    assert "Error creating reports" in result.stdout
-    assert "Unsupported format 'invalid'" in result.stdout
+    assert "Error creating reports" in result.stderr
+    assert "Unsupported format 'invalid'" in result.stderr
 
 
 def test_reports_contain_expected_data():

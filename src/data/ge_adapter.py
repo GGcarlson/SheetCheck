@@ -139,8 +139,15 @@ def run_expectations(
 
         logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns")
 
-        # Convert DataFrame to Great Expectations dataset
-        ge_df = ge.from_pandas(df)
+        # Create Great Expectations context and data source
+        context = ge.get_context()
+        data_source = context.data_sources.add_pandas(name="excel_datasource")
+        data_asset = data_source.add_dataframe_asset(name="excel_dataframe")
+        batch_definition = data_asset.add_batch_definition_whole_dataframe("excel_batch")
+        batch = batch_definition.get_batch(batch_parameters={"dataframe": df})
+        
+        # Get validator for adding expectations
+        validator = context.get_validator(batch=batch)
 
         # Add expectations from rule configuration
         for expectation_config in expectations_config:
@@ -152,9 +159,9 @@ def run_expectations(
                 logger.warning("Skipping expectation without type")
                 continue
 
-            # Add expectation to dataset
+            # Add expectation to validator
             try:
-                getattr(ge_df, expectation_type)(**kwargs, meta=meta)
+                getattr(validator, expectation_type)(**kwargs, meta=meta)
                 logger.debug(f"Added expectation: {expectation_type}")
             except AttributeError:
                 logger.error(f"Unknown expectation type: {expectation_type}")
@@ -165,7 +172,7 @@ def run_expectations(
 
         # Run validation
         logger.info(f"Running {len(expectations_config)} expectations")
-        validation_result = ge_df.validate(catch_exceptions=True)
+        validation_result = validator.validate(catch_exceptions=True)
 
         # Process results
         success = validation_result.success
@@ -202,6 +209,8 @@ def run_expectations(
     except Exception as e:
         if isinstance(e, (ImportError, FileNotFoundError, ValueError)):
             raise
+        elif isinstance(e, yaml.YAMLError):
+            raise RuntimeError(f"Great Expectations validation failed: {e}") from e
         else:
             raise RuntimeError(f"Great Expectations validation failed: {e}") from e
 

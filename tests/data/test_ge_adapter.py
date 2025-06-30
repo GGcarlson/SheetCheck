@@ -137,9 +137,9 @@ class TestRunExpectations:
         """Test error handling for invalid YAML rule structure."""
         invalid_rule_path = self.temp_dir / "invalid_rule.yaml"
 
-        # Create invalid rule file
+        # Create invalid rule file (valid YAML but invalid rule structure)
         with open(invalid_rule_path, "w") as f:
-            f.write("invalid: yaml: structure:")
+            f.write("invalid_rule_structure: true\nmissing_rule_type: data")
 
         with pytest.raises(ValueError):
             run_expectations(self.excel_path, invalid_rule_path)
@@ -381,4 +381,4 @@ expectations:
         import yaml
 
         with pytest.raises((yaml.YAMLError, ValueError, RuntimeError)):
-            run_expectations("dummy.xlsx", bad_yaml_path)
+            run_expectations("tests/fixtures/data_sample.xlsx", bad_yaml_path)

@@ -254,9 +254,9 @@ class TestCaptureHtmlScreenshot:
         png_path = tmp_path / "screenshot.png"
 
         with patch.object(
-            capture_mcp, "mcp__puppeteer__navigate"
+            capture_mcp, "mcp__puppeteer__navigate", create=True
         ) as mock_nav, patch.object(
-            capture_mcp, "mcp__puppeteer__screenshot"
+            capture_mcp, "mcp__puppeteer__screenshot", create=True
         ) as mock_screen:
 
             # Mock successful MCP calls
@@ -280,7 +280,7 @@ class TestCaptureHtmlScreenshot:
         html_path = tmp_path / "test.html"
         png_path = tmp_path / "screenshot.png"
 
-        with patch.object(capture_mcp, "mcp__puppeteer__navigate") as mock_nav:
+        with patch.object(capture_mcp, "mcp__puppeteer__navigate", create=True) as mock_nav:
             # Mock navigation failure
             mock_nav.return_value = {"error": "Navigation failed"}
 
@@ -293,9 +293,9 @@ class TestCaptureHtmlScreenshot:
         png_path = tmp_path / "screenshot.png"
 
         with patch.object(
-            capture_mcp, "mcp__puppeteer__navigate"
+            capture_mcp, "mcp__puppeteer__navigate", create=True
         ) as mock_nav, patch.object(
-            capture_mcp, "mcp__puppeteer__screenshot"
+            capture_mcp, "mcp__puppeteer__screenshot", create=True
         ) as mock_screen:
 
             # Mock successful navigation but failed screenshot

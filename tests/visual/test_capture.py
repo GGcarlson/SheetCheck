@@ -23,14 +23,14 @@ class TestCaptureSheetPng:
         }
 
         with patch("src.visual.capture.get_renderer_info") as mock_info_func, patch(
-            "src.visual.capture.capture_com"
-        ) as mock_com:
+            "src.visual.capture_com.capture_sheet_png"
+        ) as mock_capture_com:
 
             mock_info_func.return_value = mock_info
 
             capture.capture_sheet_png(wb_path, "Sheet1", png_path, renderer="auto")
 
-            mock_com.capture_sheet_png.assert_called_once_with(
+            mock_capture_com.assert_called_once_with(
                 wb_path, "Sheet1", png_path
             )
 
@@ -48,14 +48,14 @@ class TestCaptureSheetPng:
         }
 
         with patch("src.visual.capture.get_renderer_info") as mock_info_func, patch(
-            "src.visual.capture.capture_mcp"
-        ) as mock_mcp:
+            "src.visual.capture_mcp.capture_sheet_png"
+        ) as mock_capture_mcp:
 
             mock_info_func.return_value = mock_info
 
             capture.capture_sheet_png(wb_path, "Sheet1", png_path, renderer="auto")
 
-            mock_mcp.capture_sheet_png.assert_called_once_with(
+            mock_capture_mcp.assert_called_once_with(
                 wb_path, "Sheet1", png_path
             )
 
@@ -67,14 +67,14 @@ class TestCaptureSheetPng:
         mock_info = {"com_available": True, "mcp_available": True}
 
         with patch("src.visual.capture.get_renderer_info") as mock_info_func, patch(
-            "src.visual.capture.capture_com"
-        ) as mock_com:
+            "src.visual.capture_com.capture_sheet_png"
+        ) as mock_capture_com:
 
             mock_info_func.return_value = mock_info
 
             capture.capture_sheet_png(wb_path, "Sheet1", png_path, renderer="com")
 
-            mock_com.capture_sheet_png.assert_called_once_with(
+            mock_capture_com.assert_called_once_with(
                 wb_path, "Sheet1", png_path
             )
 
@@ -86,14 +86,14 @@ class TestCaptureSheetPng:
         mock_info = {"com_available": True, "mcp_available": True}
 
         with patch("src.visual.capture.get_renderer_info") as mock_info_func, patch(
-            "src.visual.capture.capture_mcp"
-        ) as mock_mcp:
+            "src.visual.capture_mcp.capture_sheet_png"
+        ) as mock_capture_mcp:
 
             mock_info_func.return_value = mock_info
 
             capture.capture_sheet_png(wb_path, "Sheet1", png_path, renderer="mcp")
 
-            mock_mcp.capture_sheet_png.assert_called_once_with(
+            mock_capture_mcp.assert_called_once_with(
                 wb_path, "Sheet1", png_path
             )
 
@@ -164,11 +164,11 @@ class TestGetRendererInfo:
         """Test renderer info on Windows with COM available."""
         mock_platform.return_value = "Windows"
 
-        with patch("src.visual.capture.capture_com") as mock_com:
-            mock_com.is_capture_supported.return_value = True
+        with patch("src.visual.capture_com.is_capture_supported") as mock_com_supported:
+            mock_com_supported.return_value = True
 
-            with patch("src.visual.capture.capture_mcp") as mock_mcp:
-                mock_mcp.is_capture_supported.return_value = False
+            with patch("src.visual.capture_mcp.is_capture_supported") as mock_mcp_supported:
+                mock_mcp_supported.return_value = False
 
                 info = capture.get_renderer_info()
 
@@ -182,8 +182,8 @@ class TestGetRendererInfo:
         """Test renderer info on Linux with MCP available."""
         mock_platform.return_value = "Linux"
 
-        with patch("src.visual.capture.capture_mcp") as mock_mcp:
-            mock_mcp.is_capture_supported.return_value = True
+        with patch("src.visual.capture_mcp.is_capture_supported") as mock_mcp_supported:
+            mock_mcp_supported.return_value = True
 
             info = capture.get_renderer_info()
 
@@ -197,12 +197,12 @@ class TestGetRendererInfo:
         """Test renderer info on Windows with both renderers available."""
         mock_platform.return_value = "Windows"
 
-        with patch("src.visual.capture.capture_com") as mock_com, patch(
-            "src.visual.capture.capture_mcp"
-        ) as mock_mcp:
+        with patch("src.visual.capture_com.is_capture_supported") as mock_com_supported, patch(
+            "src.visual.capture_mcp.is_capture_supported"
+        ) as mock_mcp_supported:
 
-            mock_com.is_capture_supported.return_value = True
-            mock_mcp.is_capture_supported.return_value = True
+            mock_com_supported.return_value = True
+            mock_mcp_supported.return_value = True
 
             info = capture.get_renderer_info()
 
@@ -216,8 +216,8 @@ class TestGetRendererInfo:
         """Test renderer info when no renderers available."""
         mock_platform.return_value = "Linux"
 
-        with patch("src.visual.capture.capture_mcp") as mock_mcp:
-            mock_mcp.is_capture_supported.return_value = False
+        with patch("src.visual.capture_mcp.is_capture_supported") as mock_mcp_supported:
+            mock_mcp_supported.return_value = False
 
             info = capture.get_renderer_info()
 
@@ -232,8 +232,8 @@ class TestGetRendererInfo:
         mock_platform.return_value = "Windows"
 
         # Mock import errors for both modules
-        with patch("src.visual.capture.capture_com", side_effect=ImportError), patch(
-            "src.visual.capture.capture_mcp", side_effect=ImportError
+        with patch("src.visual.capture_com", side_effect=ImportError), patch(
+            "src.visual.capture_mcp", side_effect=ImportError
         ):
 
             info = capture.get_renderer_info()

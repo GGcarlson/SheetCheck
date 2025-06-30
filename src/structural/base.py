@@ -43,10 +43,8 @@ class ValidationFailure:
             result["expected"] = self.expected
 
         # Handle found field (can be string, dict, or None)
-        # For CF rules, include None explicitly when no rule is found
-        if self.found is not None or (
-            self.type.startswith("cf_") and self.found is None
-        ):
+        # Include found field if it's not the default empty string
+        if self.found != "":
             result["found"] = self.found
 
         # Include tolerance if specified

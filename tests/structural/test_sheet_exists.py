@@ -45,7 +45,6 @@ def test_failure_to_dict():
         "type": "sheet_missing",
         "sheet": "Summary",
         "fix_hint": "Add a sheet named 'Summary'",
-        "found": "",
     }
     assert failure_dict == expected
 

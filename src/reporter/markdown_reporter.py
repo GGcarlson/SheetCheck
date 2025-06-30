@@ -117,7 +117,7 @@ class MarkdownReporter(BaseReporter):
         if hasattr(failure, 'expected') and failure.expected:
             lines.append(f"**Expected:** `{failure.expected}`")
             
-        if hasattr(failure, 'found') and failure.found is not None:
+        if hasattr(failure, 'found'):
             lines.append(f"**Found:** `{failure.found}`")
             
         if hasattr(failure, 'fix_hint') and failure.fix_hint:
