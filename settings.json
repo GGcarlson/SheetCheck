@@ -3,5 +3,23 @@
     "allowed": [
       "mcp__puppeteer__*"
     ]
+  },
+  "commands": {
+    "issue": {
+      "command": "python3 scripts/issue_command.py",
+      "description": "Create GitHub issue using ISSUE.md template - Usage: /issue \"feature description\""
+    },
+    "issue-create": {
+      "command": "python3 scripts/create_issue.py",
+      "description": "Create GitHub issue from feature description (advanced)"
+    },
+    "issue-interactive": {
+      "command": "python3 scripts/create_issue.py --interactive",
+      "description": "Create GitHub issue in interactive mode with prompts"
+    },
+    "issue-help": {
+      "command": "python3 scripts/create_issue.py --help",
+      "description": "Show help for issue creation script"
+    }
   }
 }
