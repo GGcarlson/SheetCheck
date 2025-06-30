@@ -12,6 +12,7 @@ from .config import load_rules, RuleConfigError, RuleConfig
 from ..structural import get_structural_rules
 from ..structural.base import ValidationFailure
 from ..data import DataValidationRule
+from ..visual import capture, pixel_diff
 
 
 @click.command()
@@ -33,13 +34,23 @@ from ..data import DataValidationRule
     default="json,md",
     help="Comma-separated reports: json,md,xml (default: json,md)",
 )
+@click.option(
+    "--update-baseline",
+    is_flag=True,
+    default=False,
+    help="Update baseline files instead of comparing against them",
+)
 @click.version_option(version=__version__, prog_name="validator")
-def main(workbook: Path, rules: Path, renderer: str, report: str) -> None:
+def main(
+    workbook: Path, rules: Path, renderer: str, report: str, update_baseline: bool
+) -> None:
     """Validate an Excel workbook."""
     click.echo(f"Validating workbook: {workbook}")
     click.echo(f"Using rules: {rules}")
     click.echo(f"Renderer: {renderer}")
     click.echo(f"Reports: {report}")
+    if update_baseline:
+        click.echo("Mode: Update baselines")
 
     # Load and validate rule configuration
     try:
@@ -76,26 +87,48 @@ def main(workbook: Path, rules: Path, renderer: str, report: str) -> None:
     # Run validation
     structural_failures = run_structural_validation(wb, config)
     data_failures = run_data_validation(wb, config)
+    visual_failures = run_visual_validation(
+        wb, config, workbook, renderer, update_baseline
+    )
 
-    all_failures = structural_failures + data_failures
+    all_failures = structural_failures + data_failures + visual_failures
 
     # Generate reports
     reports = report.split(",")
     if "json" in reports:
-        output_json_report(structural_failures, data_failures)
+        output_json_report(structural_failures, data_failures, visual_failures)
 
     # Set exit code based on validation results
-    if all_failures:
-        error_count = len(all_failures)
-        click.echo(f"Validation failed with {error_count} error(s)")
-        if structural_failures:
-            click.echo(f"  - {len(structural_failures)} structural failure(s)")
-        if data_failures:
-            click.echo(f"  - {len(data_failures)} data validation failure(s)")
-        sys.exit(1)
+    if update_baseline:
+        # When updating baselines, always exit with 0 if no errors occurred
+        if all_failures:
+            error_count = len(all_failures)
+            click.echo(f"Baseline update failed with {error_count} error(s)")
+            if structural_failures:
+                click.echo(f"  - {len(structural_failures)} structural failure(s)")
+            if data_failures:
+                click.echo(f"  - {len(data_failures)} data validation failure(s)")
+            if visual_failures:
+                click.echo(f"  - {len(visual_failures)} visual validation failure(s)")
+            sys.exit(1)
+        else:
+            click.echo("Baselines updated successfully")
+            sys.exit(0)
     else:
-        click.echo("Validation passed")
-        sys.exit(0)
+        # Normal validation mode
+        if all_failures:
+            error_count = len(all_failures)
+            click.echo(f"Validation failed with {error_count} error(s)")
+            if structural_failures:
+                click.echo(f"  - {len(structural_failures)} structural failure(s)")
+            if data_failures:
+                click.echo(f"  - {len(data_failures)} data validation failure(s)")
+            if visual_failures:
+                click.echo(f"  - {len(visual_failures)} visual validation failure(s)")
+            sys.exit(1)
+        else:
+            click.echo("Validation passed")
+            sys.exit(0)
 
 
 def run_structural_validation(
@@ -189,18 +222,147 @@ def run_data_validation(
     return failures
 
 
+def run_visual_validation(
+    workbook: Workbook,
+    config: RuleConfig,
+    workbook_path: Path,
+    renderer: str,
+    update_baseline: bool,
+) -> List[ValidationFailure]:
+    """Run visual validation by comparing screenshots against baselines.
+
+    Args:
+        workbook: The loaded Excel workbook
+        config: The rule configuration
+        workbook_path: Path to the workbook file
+        renderer: Screenshot renderer to use
+        update_baseline: Whether to update baselines instead of comparing
+
+    Returns:
+        List of visual validation failures
+    """
+    failures: List[ValidationFailure] = []
+
+    if not capture.is_capture_supported():
+        click.echo("Visual validation skipped: No screenshot renderer available")
+        return failures
+
+    # Get workbook name for baseline directory
+    workbook_name = workbook_path.stem
+
+    for sheet_name in workbook.sheetnames:
+        try:
+            # Generate screenshot of current sheet
+            temp_screenshot_path = Path(f"/tmp/{workbook_name}_{sheet_name}_temp.png")
+            temp_screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+
+            capture.capture_sheet_png(
+                workbook_path, sheet_name, temp_screenshot_path, renderer=renderer
+            )
+
+            if update_baseline:
+                # Update mode: copy screenshot to baseline
+                baseline_path = get_baseline_path(workbook_name, sheet_name)
+                update_baseline_file(temp_screenshot_path, baseline_path)
+                click.echo(f"  ✓ Baseline updated for {sheet_name}")
+
+            else:
+                # Validation mode: compare against baseline
+                baseline_path = get_baseline_path(workbook_name, sheet_name)
+
+                if not baseline_path.exists():
+                    failures.append(
+                        ValidationFailure(
+                            type="visual_baseline_missing",
+                            message=f"Baseline image missing for sheet '{sheet_name}'",
+                            fix_hint=f"Run with --update-baseline to create baseline: "
+                            f"{baseline_path}",
+                            sheet=sheet_name,
+                        )
+                    )
+                else:
+                    # Compare images using pixel diff
+                    diff_ratio = pixel_diff.diff_png(
+                        baseline_path, temp_screenshot_path, threshold=0.02
+                    )
+
+                    if diff_ratio > 0.01:  # More than 1% difference
+                        failures.append(
+                            ValidationFailure(
+                                type="visual_diff",
+                                message=f"Visual difference detected in sheet "
+                                f"'{sheet_name}': {diff_ratio:.2%}",
+                                fix_hint="Run with --update-baseline to accept changes",
+                                sheet=sheet_name,
+                            )
+                        )
+                        click.echo(f"  ✗ Visual diff in {sheet_name}: {diff_ratio:.2%}")
+                    else:
+                        click.echo(f"  ✓ Visual validation passed for {sheet_name}")
+
+            # Clean up temporary file
+            if temp_screenshot_path.exists():
+                temp_screenshot_path.unlink()
+
+        except Exception as e:
+            click.echo(f"Error in visual validation for {sheet_name}: {e}", err=True)
+            failures.append(
+                ValidationFailure(
+                    type="visual_error",
+                    message=f"Visual validation failed for sheet '{sheet_name}': {e}",
+                    fix_hint="Check screenshot renderer and file permissions",
+                    sheet=sheet_name,
+                )
+            )
+
+    return failures
+
+
+def get_baseline_path(workbook_name: str, sheet_name: str) -> Path:
+    """Get the baseline image path for a workbook sheet.
+
+    Args:
+        workbook_name: Name of the workbook (without extension)
+        sheet_name: Name of the sheet
+
+    Returns:
+        Path to the baseline PNG file
+    """
+    return Path("baselines") / "sheets" / workbook_name / f"{sheet_name}.png"
+
+
+def update_baseline_file(source_path: Path, baseline_path: Path) -> None:
+    """Update a baseline file by copying from source.
+
+    Args:
+        source_path: Path to the new screenshot/capture
+        baseline_path: Path to the baseline file to update
+    """
+    import shutil
+
+    # Ensure baseline directory exists
+    baseline_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Copy the new file to baseline location
+    shutil.copy2(source_path, baseline_path)
+
+
 def output_json_report(
-    structural_failures: List[ValidationFailure], data_failures: List[ValidationFailure]
+    structural_failures: List[ValidationFailure],
+    data_failures: List[ValidationFailure],
+    visual_failures: List[ValidationFailure],
 ) -> None:
     """Output validation results in JSON format.
 
     Args:
         structural_failures: List of structural validation failures
         data_failures: List of data validation failures
+        visual_failures: List of visual validation failures
     """
     result = {
         "structuralFailures": [failure.to_dict() for failure in structural_failures],
         "dataFailures": [failure.to_dict() for failure in data_failures],
+        "visualFailures": [failure.to_dict() for failure in visual_failures],
     }
 
     json_output = json.dumps(result, indent=2)

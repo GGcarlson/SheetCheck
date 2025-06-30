@@ -143,7 +143,9 @@ class TestGenerateHtmlFromExcel:
 
             # Mock the Path() call chain
             mock_path_obj = Mock()
-            mock_path_obj.parent.parent.parent.__truediv__.return_value.__truediv__.return_value = mock_script
+            mock_path_obj.parent.parent.parent.__truediv__.return_value.__truediv__.return_value = (
+                mock_script
+            )
             mock_path.return_value = mock_path_obj
 
             result = capture_mcp._generate_html_from_excel(wb_path, "Sheet1")
