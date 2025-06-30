@@ -11,12 +11,20 @@ from .config import load_rules, RuleConfigError, RuleConfig
 from ..structural import get_structural_rules
 from ..structural.base import ValidationFailure
 from ..data import DataValidationRule
+from ..data.data_diff_rule import DataDiffRule
 from ..visual import capture, pixel_diff
 from ..reporter import create_reporters
 
 
 @click.command()
 @click.argument("workbook", type=click.Path(exists=True, path_type=Path))
+@click.argument("workbook2", type=click.Path(exists=True, path_type=Path), required=False)
+@click.option(
+    "--mode",
+    type=click.Choice(["validate", "diff"]),
+    default="validate",
+    help="Operation mode: validate single workbook or diff two workbooks (default: validate)",
+)
 @click.option(
     "--rules",
     type=click.Path(exists=True, path_type=Path),
@@ -42,9 +50,41 @@ from ..reporter import create_reporters
 )
 @click.version_option(version=__version__, prog_name="validator")
 def main(
-    workbook: Path, rules: Path, renderer: str, report: str, update_baseline: bool
+    workbook: Path, workbook2: Path, mode: str, rules: Path, renderer: str, report: str, update_baseline: bool
 ) -> None:
-    """Validate an Excel workbook."""
+    """Validate an Excel workbook or compare two workbooks."""
+    
+    # Handle diff mode
+    if mode == "diff":
+        if not workbook2:
+            click.echo("Error: --mode diff requires two workbook arguments", err=True)
+            raise click.Abort()
+        
+        click.echo(f"Diff mode: Comparing {workbook} vs {workbook2}")
+        click.echo(f"Reports: {report}")
+        
+        # Run diff comparison
+        diff_rule = DataDiffRule("Sheet1", None)
+        diff_failures = diff_rule.run_diff(workbook, workbook2)
+        
+        # Generate reports
+        try:
+            reporters = create_reporters(report, Path("reports"))
+            for reporter in reporters:
+                output_path = reporter.write_to_file([], diff_failures, [])
+                click.echo(f"{reporter.__class__.__name__[:-8]} report written to {output_path}")
+        except ValueError as e:
+            click.echo(f"Error creating reports: {e}", err=True)
+        
+        # Exit with appropriate code
+        if diff_failures:
+            click.echo(f"Found {len(diff_failures)} difference(s)")
+            sys.exit(1)
+        else:
+            click.echo("No differences found")
+            sys.exit(0)
+    
+    # Validate mode (original functionality)
     click.echo(f"Validating workbook: {workbook}")
     click.echo(f"Using rules: {rules}")
     click.echo(f"Renderer: {renderer}")

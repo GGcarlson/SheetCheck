@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationResults>
+  <StructuralFailures>
+    <Failure>
+      <type>sheet_missing</type>
+      <sheet>Summary</sheet>
+      <fix_hint>Add a sheet named 'Summary'</fix_hint>
+    </Failure>
+  </StructuralFailures>
+  <DataFailures />
+  <VisualFailures />
+</ValidationResults>

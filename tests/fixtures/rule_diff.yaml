@@ -1,0 +1,9 @@
+# DataDiffRule configuration
+target:
+  sheet: "Sheet1"
+  id_column: "ID"
+  
+# Diff rule configuration
+diff_options:
+  ignore_columns: []  # List of columns to ignore in comparison
+  tolerance: 0.01     # Numeric tolerance for comparisons

@@ -1,0 +1,40 @@
+{
+  "structuralFailures": [],
+  "dataFailures": [
+    {
+      "type": "cell_changed",
+      "sheet": "Sheet1",
+      "cell": "C3",
+      "message": "Cell C3 changed in column 'Price'",
+      "fix_hint": "Value changed from '2' to '2.25'",
+      "expected": "2",
+      "found": "2.25"
+    },
+    {
+      "type": "cell_changed",
+      "sheet": "Sheet1",
+      "cell": "D4",
+      "message": "Cell D4 changed in column 'Quantity'",
+      "fix_hint": "Value changed from '150' to '175'",
+      "expected": "150",
+      "found": "175"
+    },
+    {
+      "type": "cell_changed",
+      "sheet": "Sheet1",
+      "cell": "E4",
+      "message": "Cell E4 changed in column 'Active'",
+      "fix_hint": "Value changed from 'False' to 'True'",
+      "expected": "False",
+      "found": "True"
+    },
+    {
+      "type": "row_added",
+      "sheet": "Sheet1",
+      "message": "New row added with ID=5",
+      "fix_hint": "Row was added to the new workbook",
+      "found": "Row 6"
+    }
+  ],
+  "visualFailures": []
+}
