@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allowed": [
+      "mcp__puppeteer__*"
+    ]
+  }
+}

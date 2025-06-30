@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "puppeteer": {
+      "url": "http://localhost:8085/",
+      "authToken": ""
+    }
+  }
+}
