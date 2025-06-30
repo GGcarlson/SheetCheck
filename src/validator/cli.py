@@ -1,4 +1,3 @@
-import json
 import sys
 from pathlib import Path
 from typing import List
@@ -13,6 +12,7 @@ from ..structural import get_structural_rules
 from ..structural.base import ValidationFailure
 from ..data import DataValidationRule
 from ..visual import capture, pixel_diff
+from ..reporter import create_reporters
 
 
 @click.command()
@@ -32,7 +32,7 @@ from ..visual import capture, pixel_diff
 @click.option(
     "--report",
     default="json,md",
-    help="Comma-separated reports: json,md,xml (default: json,md)",
+    help="Comma-separated report formats: json,xml,md,markdown (default: json,md)",
 )
 @click.option(
     "--update-baseline",
@@ -93,10 +93,16 @@ def main(
 
     all_failures = structural_failures + data_failures + visual_failures
 
-    # Generate reports
-    reports = report.split(",")
-    if "json" in reports:
-        output_json_report(structural_failures, data_failures, visual_failures)
+    # Generate reports using unified reporter system
+    try:
+        reporters = create_reporters(report, Path("reports"))
+        for reporter in reporters:
+            output_path = reporter.write_to_file(
+                structural_failures, data_failures, visual_failures
+            )
+            click.echo(f"{reporter.__class__.__name__[:-8]} report written to {output_path}")
+    except ValueError as e:
+        click.echo(f"Error creating reports: {e}", err=True)
 
     # Set exit code based on validation results
     if update_baseline:
@@ -347,31 +353,6 @@ def update_baseline_file(source_path: Path, baseline_path: Path) -> None:
     shutil.copy2(source_path, baseline_path)
 
 
-def output_json_report(
-    structural_failures: List[ValidationFailure],
-    data_failures: List[ValidationFailure],
-    visual_failures: List[ValidationFailure],
-) -> None:
-    """Output validation results in JSON format.
-
-    Args:
-        structural_failures: List of structural validation failures
-        data_failures: List of data validation failures
-        visual_failures: List of visual validation failures
-    """
-    result = {
-        "structuralFailures": [failure.to_dict() for failure in structural_failures],
-        "dataFailures": [failure.to_dict() for failure in data_failures],
-        "visualFailures": [failure.to_dict() for failure in visual_failures],
-    }
-
-    json_output = json.dumps(result, indent=2)
-
-    # Write to results.json file
-    with open("results.json", "w") as f:
-        f.write(json_output)
-
-    click.echo("JSON report written to results.json")
 
 
 if __name__ == "__main__":
