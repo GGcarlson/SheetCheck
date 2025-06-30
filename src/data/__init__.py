@@ -10,7 +10,7 @@ from .data_rule import DataValidationRule
 
 __all__ = [
     "ValidationResult",
-    "run_expectations", 
+    "run_expectations",
     "is_ge_supported",
     "create_sample_rule_yaml",
     "DataValidationRule",

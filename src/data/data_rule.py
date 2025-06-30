@@ -49,8 +49,7 @@ class DataValidationRule(Rule):
                         "for data validation"
                     ),
                     fix_hint=(
-                        "Install dependencies: "
-                        "pip install pandas great-expectations"
+                        "Install dependencies: " "pip install pandas great-expectations"
                     ),
                 )
             )
